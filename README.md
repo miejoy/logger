@@ -88,25 +88,15 @@ import Logger
 
 let logStr = "test"
 
-// 传参方式打印日志
+// 打印日志
 LogTrace(logStr)
 // 可传入多个参数
-LogDebug(logStr, logStr)
+LogDebug([logStr, logStr])
 LogInfo(logStr)
 LogNotice(logStr)
 LogWarning(logStr)
 LogError(logStr)
 LogFault(logStr)
-
-// 回调方式打印日志
-LogTrace { logStr }
-// 可传打印多个独立字符串
-LogDebug {
-    logStr
-    logStr
-}
-LogInfo { logStr }
-LogNotice { logStr }
 ```
 
 ### 日志片段列表设置详情

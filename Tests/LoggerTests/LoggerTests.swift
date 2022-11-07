@@ -37,7 +37,7 @@ final class LoggerTests: XCTestCase {
         XCTAssertEqual(fakeRecorder.logList[index], logStr)
         index += 1
         
-        LogDebug(logStr, logStr)
+        LogDebug([logStr, logStr])
         XCTAssertEqual(fakeRecorder.logList.count, index + 1)
         XCTAssertEqual(fakeRecorder.logList[index], logStr + " " + logStr)
         index += 1
@@ -66,29 +66,6 @@ final class LoggerTests: XCTestCase {
         XCTAssertEqual(fakeRecorder.logList.count, index + 1)
         XCTAssertEqual(fakeRecorder.logList[index], logStr)
         index += 1
-        
-        LogTrace { logStr }
-        XCTAssertEqual(fakeRecorder.logList.count, index + 1)
-        XCTAssertEqual(fakeRecorder.logList[index], logStr)
-        index += 1
-        
-        LogDebug {
-            logStr
-            logStr
-        }
-        XCTAssertEqual(fakeRecorder.logList.count, index + 1)
-        XCTAssertEqual(fakeRecorder.logList[index], logStr + " " + logStr)
-        index += 1
-        
-        LogInfo { logStr }
-        XCTAssertEqual(fakeRecorder.logList.count, index + 1)
-        XCTAssertEqual(fakeRecorder.logList[index], logStr)
-        index += 1
-        
-        LogNotice { logStr }
-        XCTAssertEqual(fakeRecorder.logList.count, index + 1)
-        XCTAssertEqual(fakeRecorder.logList[index], logStr)
-        index += 1
     }
     
     func testLogTraceWithBlock() {
@@ -101,9 +78,7 @@ final class LoggerTests: XCTestCase {
         
         XCTAssertEqual(fakeRecorder.logList.count, 0)
         
-        LogTrace {
-            test.call()
-        }
+        LogTrace(test.call())
         
         XCTAssertEqual(test.isCall, true)
         XCTAssertEqual(fakeRecorder.logList.count, 1)
@@ -128,9 +103,7 @@ final class LoggerTests: XCTestCase {
         
         XCTAssertEqual(fakeRecorder.logList.count, 0)
         
-        LogDebug {
-            test.call()
-        }
+        LogDebug(test.call())
         
         XCTAssertEqual(test.isCall, true)
         XCTAssertEqual(fakeRecorder.logList.count, 1)
@@ -138,10 +111,7 @@ final class LoggerTests: XCTestCase {
         
         Logger.shared.logLevel = .info
         test.isCall = false
-        LogDebug {
-            test.call()
-            test.call()
-        }
+        LogDebug([test.call(), test.call()])
         XCTAssertEqual(fakeRecorder.logList.count, 1)
         XCTAssertEqual(test.isCall, false)
     }
@@ -156,9 +126,7 @@ final class LoggerTests: XCTestCase {
         
         XCTAssertEqual(fakeRecorder.logList.count, 0)
         
-        LogInfo {
-            test.call()
-        }
+        LogInfo(test.call())
         
         XCTAssertEqual(test.isCall, true)
         XCTAssertEqual(fakeRecorder.logList.count, 1)
@@ -183,9 +151,7 @@ final class LoggerTests: XCTestCase {
         
         XCTAssertEqual(fakeRecorder.logList.count, 0)
         
-        LogNotice {
-            test.call()
-        }
+        LogNotice(test.call())
         
         XCTAssertEqual(test.isCall, true)
         XCTAssertEqual(fakeRecorder.logList.count, 1)
@@ -225,10 +191,7 @@ final class LoggerTests: XCTestCase {
         XCTAssertEqual(fakeRecorder.logList[0], "LoggerTests.swift(\(line + 1)).testLogSegment(): \(logString1)")
         
         line = #line
-        LogInfo {
-            logString1
-            logString2
-        }
+        LogInfo([logString1, logString2])
         XCTAssertEqual(fakeRecorder.logList.count, 2)
         XCTAssertEqual(fakeRecorder.logList[1], "LoggerTests.swift(\(line + 1)).testLogSegment(): \(logString1)\n\(logString2)")
     }
@@ -254,10 +217,7 @@ final class LoggerTests: XCTestCase {
         XCTAssertEqual(fakeRecorder.logList[0], "LoggerTests.swift(\(line + 1))·············: \(logString1)")
         
         line = #line
-        LogInfo {
-            logString1
-            logString2
-        }
+        LogInfo([logString1, logString2])
         XCTAssertEqual(fakeRecorder.logList.count, 2)
         XCTAssertEqual(fakeRecorder.logList[1], "LoggerTests.swift(\(line + 1))·············: \(logString1)\n\(logString2)")
     }

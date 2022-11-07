@@ -73,7 +73,7 @@ public final class Logger {
     /// 记录对应日志
     ///
     /// - Parameter level: 日志等级
-    /// - Parameter messages: 日志消息列表
+    /// - Parameter message: 日志消息列表
     /// - Parameter userInfo: 用户自定义信息
     /// - Parameter file: 调用日志文件名
     /// - Parameter line: 调用日志文件对应行数
@@ -81,12 +81,13 @@ public final class Logger {
     /// - Returns DataToStringConverter<LogContent>: 返回构造好的转化器
     public func record(
         _ level: LogLevel,
-        _ messages: [Any],
+        _ message: Any,
         userInfo : [String: String] = [:],
         _ file: String = #file,
         _ line: Int = #line,
         _ method: String = #function
     ) {
+        let messages = message as? [Any] ?? [message]
         let logContent: LogContent = .init(level: level, messages: messages, userInfo: userInfo, file: file, line: line, method: method)
         let logStr = logSegments.reduce(into: "") { partialResult, segment in
             switch segment {
