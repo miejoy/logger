@@ -11,7 +11,10 @@ import XCTest
 final class LoggerTests: XCTestCase {
     
     func clearAll() {
-        Logger.shared = Logger()
+        Logger.shared.logLevel = .debug
+        Logger.shared.logSegments = .defaultSegments
+        Logger.shared.recorder = ConsoleRecorder()
+        Logger.shared.throwFault = true
     }
     
     func testLogInfo() {
@@ -111,7 +114,7 @@ final class LoggerTests: XCTestCase {
         
         Logger.shared.logLevel = .info
         test.isCall = false
-        LogDebug([test.call(), test.call()])
+        LogDebug([test.call(), test.call(), ""])
         XCTAssertEqual(fakeRecorder.logList.count, 1)
         XCTAssertEqual(test.isCall, false)
     }
@@ -199,10 +202,13 @@ final class LoggerTests: XCTestCase {
     func testCustomLogSegment() {
         clearAll()
         let fakeRecorder = FakeRecoder()
+        let sharedLabel = "Shared"
+        Logger.shared.labels = [sharedLabel]
         Logger.shared.recorder = fakeRecorder
         Logger.shared.logSegments = [
             .logContent(.defaultFileAndLineConverter()),
             .string(": "),
+            .logContent(.convert(\.labels, with: .defaultLabelsConverter())),
             .logContent(.convert(\.messages, with: .defaultMessagesConverter("\n")))
         ]
         
@@ -214,12 +220,12 @@ final class LoggerTests: XCTestCase {
         var line = #line
         LogInfo(logString1)
         XCTAssertEqual(fakeRecorder.logList.count, 1)
-        XCTAssertEqual(fakeRecorder.logList[0], "LoggerTests.swift(\(line + 1))·············: \(logString1)")
+        XCTAssertEqual(fakeRecorder.logList[0], "LoggerTests.swift(\(line + 1))·············: [\(sharedLabel)] \(logString1)")
         
         line = #line
         LogInfo([logString1, logString2])
         XCTAssertEqual(fakeRecorder.logList.count, 2)
-        XCTAssertEqual(fakeRecorder.logList[1], "LoggerTests.swift(\(line + 1))·············: \(logString1)\n\(logString2)")
+        XCTAssertEqual(fakeRecorder.logList[1], "LoggerTests.swift(\(line + 1))·············: [\(sharedLabel)] \(logString1)\n\(logString2)")
     }
     
     func testLoggerPerformance() {
@@ -255,6 +261,91 @@ final class LoggerTests: XCTestCase {
         let dTime = endTime.timeIntervalSince1970 - startTime.timeIntervalSince1970
                 
         print("Direct \(dTime/dTime1)")
+    }
+    
+    func testLoggerIndependent() {
+        let fakeRecorder = FakeRecoder()
+        let logger = Logger(label: "label", logLevel: .trace, logSegments: [.logContent(.convert(\.messages, with: .defaultMessagesConverter()))], recorder: fakeRecorder, throwFault: false)
+        
+        let logStr = "test"
+        
+        XCTAssertEqual(fakeRecorder.logList.count, 0)
+        var index = 0
+        
+        logger.trace(logStr)
+        XCTAssertEqual(fakeRecorder.logList.count, index + 1)
+        XCTAssertEqual(fakeRecorder.logList[index], logStr)
+        index += 1
+        
+        logger.debug([logStr, logStr])
+        XCTAssertEqual(fakeRecorder.logList.count, index + 1)
+        XCTAssertEqual(fakeRecorder.logList[index], logStr + " " + logStr)
+        index += 1
+        
+        logger.info(logStr)
+        XCTAssertEqual(fakeRecorder.logList.count, index + 1)
+        XCTAssertEqual(fakeRecorder.logList[index], logStr)
+        index += 1
+        
+        logger.notice(logStr)
+        XCTAssertEqual(fakeRecorder.logList.count, index + 1)
+        XCTAssertEqual(fakeRecorder.logList[index], logStr)
+        index += 1
+        
+        logger.warning(logStr)
+        XCTAssertEqual(fakeRecorder.logList.count, index + 1)
+        XCTAssertEqual(fakeRecorder.logList[index], logStr)
+        index += 1
+        
+        logger.error(logStr)
+        XCTAssertEqual(fakeRecorder.logList.count, index + 1)
+        XCTAssertEqual(fakeRecorder.logList[index], logStr)
+        index += 1
+        
+        logger.fault(logStr)
+        XCTAssertEqual(fakeRecorder.logList.count, index + 1)
+        XCTAssertEqual(fakeRecorder.logList[index], logStr)
+        index += 1
+    }
+    
+    func testDeriveLogger() {
+        let fakeRecorder = FakeRecoder()
+        let logSegments = [LogSegment]([LogSegment].defaultSegments.dropFirst())
+        let firstLabel = "First"
+        let logger = Logger(label: firstLabel, logLevel: .trace, logSegments: logSegments, recorder: fakeRecorder, throwFault: false)
+        
+        let secondLabel = "Second"
+        let subLogger = logger.deriveLoggerWith(label: secondLabel)
+        
+        XCTAssertEqual(fakeRecorder.logList.count, 0)
+        
+        let logString1 = "test1"
+        let line = #line
+        subLogger.trace(logString1)
+        XCTAssertEqual(fakeRecorder.logList.count, 1)
+        XCTAssertEqual(fakeRecorder.logList[0], " [🐾 Trace  ] LoggerTests.swift(\(line + 1)).testDeriveLogger() ↔️ [\(firstLabel)][\(secondLabel)] \(logString1)")
+    }
+    
+    func testCombineRecorder() {
+        clearAll()
+        let logger = Logger.shared
+        logger.logLevel = .trace
+        let fakeRecorder1 = FakeRecoder()
+        let fakeRecorder2 = FakeRecoder()
+        logger.recorder = CombineRecorder(fakeRecorder1, ConsoleRecorder(), fakeRecorder2)
+        logger.logSegments = [
+            .logContent(.convert(\.messages, with: .defaultMessagesConverter(" ")))
+        ]
+        
+        XCTAssertEqual(fakeRecorder1.logList.count, 0)
+        XCTAssertEqual(fakeRecorder2.logList.count, 0)
+        
+        let logString1 = "test1"
+        logger.trace(logString1)
+        XCTAssertEqual(fakeRecorder1.logList.count, 1)
+        XCTAssertEqual(fakeRecorder2.logList.count, 1)
+        XCTAssertEqual(fakeRecorder1.logList[0], "\(logString1)")
+        XCTAssertEqual(fakeRecorder2.logList[0], "\(logString1)")
     }
 }
 
@@ -299,7 +390,7 @@ extension Logger {
         case .error:    levelStr = "‼️ Error  "
         case .fault:    levelStr = "🚫 Fault  "
         }
-        let logContent: LogContent = .init(level: level, messages: messages, userInfo: userInfo, file: file, line: line, method: method)
+        let logContent: LogContent = .init(level: level, labels: labels, messages: messages, userInfo: userInfo, file: file, line: line, method: method)
         let logStr = s_defaultDateFormat.string(from: Date()) + " [\(levelStr)] " + file.suffix(from: file.lastIndex(of: "/") ?? file.startIndex) + "(\(line)).\(method)" +  " ↔️ " + messages.map( { "\($0)" }).joined(separator: " ")
         recorder.write(log: logStr, of: logContent)
     }

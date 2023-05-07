@@ -61,6 +61,18 @@ extension DataToStringConverter {
         }
     }
     
+    // MARK: -labels
+    
+    /// 默认日志消息转化器
+    public static func defaultLabelsConverter() -> DataToStringConverter<[String]> {
+        .init { labels in
+            if labels.isEmpty {
+                return ""
+            }
+            return labels.map {"[\($0)]"}.joined(separator: "").appending(" ")
+        }
+    }
+    
     // MARK: -messages
     
     /// 默认日志消息转化器
@@ -152,3 +164,10 @@ extension DataToStringConverter {
         }))
     }
 }
+
+/// 默认日志日期格式
+let s_defaultDateFormat : DateFormatter = {
+    let dateFormat : DateFormatter = DateFormatter()
+    dateFormat.dateFormat = "yyyy-MM-dd HH:mm:ss.SSSZ"
+    return dateFormat
+}()

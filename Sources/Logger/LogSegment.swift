@@ -16,3 +16,16 @@ public enum LogSegment {
     /// 日志记录时间片段
     case dateTime(DateFormatter)
 }
+
+extension Array where Element == LogSegment {
+    public static let defaultSegments: [LogSegment] = [
+        .dateTime(s_defaultDateFormat),
+        .string(" ["),
+        .logContent(.convert(\.level, with: .defaultLevelConverter())),
+        .string("] "),
+        .logContent(.defaultLocationConverter()),
+        .string(" ↔️ "),
+        .logContent(.convert(\.labels, with: .defaultLabelsConverter())),
+        .logContent(.convert(\.messages, with: .defaultMessagesConverter()))
+    ]
+}

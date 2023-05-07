@@ -19,7 +19,7 @@ Logger 是一个简单的日志输出工具，内部提供可自定义的日志�
 
 - 日志输入，即如何调用
   - Logger+Utils 提供方便的日志调用工具方法
-  - 也可以直接调用 Logger 的 record 方法记录日志
+  - 也可以直接调用 Logger 的相关方法记录日志
 - 日志处理
   - 日志处理采用分片单独处理后再拼接的方式，可以高度自定义
   - LogSegment 即为日志的一个片段
@@ -99,6 +99,19 @@ LogError(logStr)
 LogFault(logStr)
 ```
 
+### 派生子日志工具
+
+```swift
+import Logger
+
+// 派生子日志工具
+let subLogger = Logger.shared.deriveLoggerWith(label: "Sub") 
+
+// 使用子日志工具打印日志
+let logStr = "test"
+subLogger.info(logStr)
+```
+
 ### 日志片段列表设置详情
 
 ```swift
@@ -128,5 +141,3 @@ Raymond.huang: raymond0huang@gmail.com
 ## License
 
 Logger is available under the MIT license. See the LICENSE file for more info.
-
-

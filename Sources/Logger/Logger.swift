@@ -1,5 +1,5 @@
 //
-//  LoggerInfo.swift
+//  Logger.swift
 //  
 //
 //  Created by 黄磊 on 2022/10/3.
@@ -33,10 +33,12 @@ public enum LogLevel : Int, Comparable {
 public struct LogContent {
     /// 日志等级
     public let level: LogLevel
+    /// 当前使用 Logger 的标签列表
+    public let labels: [String]
     /// 日志消息列表
     public let messages: [Any]
     /// 日志用户信息，可用于传入定制内容
-    public let userInfo: [String: String]
+    public let userInfo: [String: Any]
     /// 调用日志文件名
     public let file: String
     /// 调用日志文件对应行数
@@ -48,27 +50,84 @@ public struct LogContent {
 /// 日志记录单例
 public final class Logger {
     /// 日志记录共享单例
-    public static var shared = Logger()
+    public static let shared = Logger()
+    
+    /// Logger 包含的标识列表
+    public var labels: [String]
     
     /// 日志等级
-    public var logLevel: LogLevel = .debug
+    public var logLevel: LogLevel
     
     /// 日志片段列表
-    public var logSegments: [LogSegment] = [
-        .dateTime(s_defaultDateFormat),
-        .string(" ["),
-        .logContent(.convert(\.level, with: .defaultLevelConverter())),
-        .string("] "),
-        .logContent(.defaultLocationConverter()),
-        .string(" ↔️ "),
-        .logContent(.convert(\.messages, with: .defaultMessagesConverter()))
-    ]
+    public var logSegments: [LogSegment]
         
     /// 日志记录器，默认控制台输出
-    public var recorder: LogRecorder = ConsoleRecorder()
+    public var recorder: LogRecorder
         
     /// 默认抛出 LogFault，默认抛出异常
-    public var throwFault: Bool = true
+    public var throwFault: Bool
+    
+    /// 构造一个新的 Logger
+    /// - Parameters:
+    ///   - label: Logger 对应标识
+    ///   - logLevel: 日志等级
+    ///   - logSegments: 日志片段列表
+    ///   - recorder: 日志对应记录者
+    ///   - throwFault: LogFault 是否抛出异常，默认抛出异常
+    public convenience init(
+        label: String? = nil,
+        logLevel: LogLevel = .debug,
+        logSegments: [LogSegment] = .defaultSegments,
+        recorder: LogRecorder = ConsoleRecorder(),
+        throwFault: Bool = true
+    ) {
+        if let label = label {
+            self.init(
+                labels: [label],
+                logLevel: logLevel,
+                logSegments: logSegments,
+                recorder: recorder,
+                throwFault: throwFault
+            )
+        } else {
+            self.init(
+                labels: [],
+                logLevel: logLevel,
+                logSegments: logSegments,
+                recorder: recorder,
+                throwFault: throwFault
+            )
+        }
+    }
+    
+    init(
+        labels: [String],
+        logLevel: LogLevel = .debug,
+        logSegments: [LogSegment] = .defaultSegments,
+        recorder: LogRecorder = ConsoleRecorder(),
+        throwFault: Bool = true
+    ) {
+        self.labels = labels
+        self.logLevel = logLevel
+        self.logSegments = logSegments
+        self.recorder = recorder
+        self.throwFault = throwFault
+    }
+    
+    /// 派生一个子 日志记录 实例，子实例除 labels 以为参数与原实例相同
+    /// - Parameter label: 子 日志记录 实例 添加的标识
+    /// - Returns: 返回新的子 日志记录 实例
+    public func deriveLoggerWith(label: String) -> Logger {
+        var newLables = labels
+        newLables.append(label)
+        return .init(
+            labels: newLables,
+            logLevel: logLevel,
+            logSegments: logSegments,
+            recorder: recorder,
+            throwFault: throwFault
+        )
+    }
     
     /// 记录对应日志
     ///
@@ -78,17 +137,30 @@ public final class Logger {
     /// - Parameter file: 调用日志文件名
     /// - Parameter line: 调用日志文件对应行数
     /// - Parameter method: 调用日志文件对应方法名
-    /// - Returns DataToStringConverter<LogContent>: 返回构造好的转化器
-    public func record(
+    /// - Returns Void
+    @usableFromInline
+    func record(
         _ level: LogLevel,
-        _ message: Any,
-        userInfo : [String: String] = [:],
-        _ file: String = #file,
+        _ message: @autoclosure () -> Any,
+        userInfo : [String: Any] = [:],
+        _ file: String = #fileID,
         _ line: Int = #line,
         _ method: String = #function
     ) {
-        let messages = message as? [Any] ?? [message]
-        let logContent: LogContent = .init(level: level, messages: messages, userInfo: userInfo, file: file, line: line, method: method)
+        guard logLevel <= level else {
+            return
+        }
+        let logMessage = message()
+        let messages = logMessage as? [Any] ?? [logMessage]
+        let logContent: LogContent = .init(
+            level: level,
+            labels: labels,
+            messages: messages,
+            userInfo: userInfo,
+            file: file,
+            line: line,
+            method: method
+        )
         let logStr = logSegments.reduce(into: "") { partialResult, segment in
             switch segment {
             case .string(let str):
@@ -106,9 +178,40 @@ public final class Logger {
     }
 }
 
-/// 默认日志日期格式
-let s_defaultDateFormat : DateFormatter = {
-    let dateFormat : DateFormatter = DateFormatter()
-    dateFormat.dateFormat = "yyyy-MM-dd HH:mm:ss.SSSZ"
-    return dateFormat
-}()
+
+extension Logger {
+    @inlinable
+    func trace(_ message: @autoclosure () -> Any, userInfo : [String: Any] = [:], file: String = #fileID, _ line: Int = #line, _ method: String = #function) {
+        record(.trace, message(), userInfo: userInfo, file, line, method)
+    }
+    
+    @inlinable
+    func debug(_ message: @autoclosure () -> Any, userInfo : [String: Any] = [:], file: String = #fileID, _ line: Int = #line, _ method: String = #function) {
+        record(.debug, message(), userInfo: userInfo, file, line, method)
+    }
+    
+    @inlinable
+    func info(_ message: @autoclosure () -> Any, userInfo : [String: Any] = [:], file: String = #fileID, _ line: Int = #line, _ method: String = #function) {
+        record(.info, message(), userInfo: userInfo, file, line, method)
+    }
+    
+    @inlinable
+    func notice(_ message: @autoclosure () -> Any, userInfo : [String: Any] = [:], file: String = #fileID, _ line: Int = #line, _ method: String = #function) {
+        record(.notice, message(), userInfo: userInfo, file, line, method)
+    }
+    
+    @inlinable
+    func warning(_ message: @autoclosure () -> Any, userInfo : [String: Any] = [:], file: String = #fileID, _ line: Int = #line, _ method: String = #function) {
+        record(.warning, message(), userInfo: userInfo, file, line, method)
+    }
+    
+    @inlinable
+    func error(_ message: @autoclosure () -> Any, userInfo : [String: Any] = [:], file: String = #fileID, _ line: Int = #line, _ method: String = #function) {
+        record(.error, message(), userInfo: userInfo, file, line, method)
+    }
+    
+    @inlinable
+    func fault(_ message: @autoclosure () -> Any, userInfo : [String: Any] = [:], file: String = #fileID, _ line: Int = #line, _ method: String = #function) {
+        record(.error, message(), userInfo: userInfo, file, line, method)
+    }
+}
