@@ -31,6 +31,8 @@ public enum LogLevel : Int, Comparable {
 
 /// 日志内容
 public struct LogContent {
+    /// 日志记录时间
+    public let date: Date
     /// 日志等级
     public let level: LogLevel
     /// 当前使用 Logger 的标签列表
@@ -153,6 +155,7 @@ public final class Logger {
         let logMessage = message()
         let messages = logMessage as? [Any] ?? [logMessage]
         let logContent: LogContent = .init(
+            date: Date(),
             level: level,
             labels: labels,
             messages: messages,
@@ -165,10 +168,8 @@ public final class Logger {
             switch segment {
             case .string(let str):
                 partialResult += str
-            case .logContent(let converter):
+            case .content(let converter):
                 partialResult += converter(logContent)
-            case .dateTime(let format):
-                partialResult += format.string(from: Date())
             }
         }
         recorder.write(log: logStr, of: logContent)
@@ -181,37 +182,37 @@ public final class Logger {
 
 extension Logger {
     @inlinable
-    func trace(_ message: @autoclosure () -> Any, userInfo : [String: Any] = [:], file: String = #fileID, _ line: Int = #line, _ method: String = #function) {
+    public func trace(_ message: @autoclosure () -> Any, userInfo : [String: Any] = [:], file: String = #fileID, _ line: Int = #line, _ method: String = #function) {
         record(.trace, message(), userInfo: userInfo, file, line, method)
     }
     
     @inlinable
-    func debug(_ message: @autoclosure () -> Any, userInfo : [String: Any] = [:], file: String = #fileID, _ line: Int = #line, _ method: String = #function) {
+    public func debug(_ message: @autoclosure () -> Any, userInfo : [String: Any] = [:], file: String = #fileID, _ line: Int = #line, _ method: String = #function) {
         record(.debug, message(), userInfo: userInfo, file, line, method)
     }
     
     @inlinable
-    func info(_ message: @autoclosure () -> Any, userInfo : [String: Any] = [:], file: String = #fileID, _ line: Int = #line, _ method: String = #function) {
+    public func info(_ message: @autoclosure () -> Any, userInfo : [String: Any] = [:], file: String = #fileID, _ line: Int = #line, _ method: String = #function) {
         record(.info, message(), userInfo: userInfo, file, line, method)
     }
     
     @inlinable
-    func notice(_ message: @autoclosure () -> Any, userInfo : [String: Any] = [:], file: String = #fileID, _ line: Int = #line, _ method: String = #function) {
+    public func notice(_ message: @autoclosure () -> Any, userInfo : [String: Any] = [:], file: String = #fileID, _ line: Int = #line, _ method: String = #function) {
         record(.notice, message(), userInfo: userInfo, file, line, method)
     }
     
     @inlinable
-    func warning(_ message: @autoclosure () -> Any, userInfo : [String: Any] = [:], file: String = #fileID, _ line: Int = #line, _ method: String = #function) {
+    public func warning(_ message: @autoclosure () -> Any, userInfo : [String: Any] = [:], file: String = #fileID, _ line: Int = #line, _ method: String = #function) {
         record(.warning, message(), userInfo: userInfo, file, line, method)
     }
     
     @inlinable
-    func error(_ message: @autoclosure () -> Any, userInfo : [String: Any] = [:], file: String = #fileID, _ line: Int = #line, _ method: String = #function) {
+    public func error(_ message: @autoclosure () -> Any, userInfo : [String: Any] = [:], file: String = #fileID, _ line: Int = #line, _ method: String = #function) {
         record(.error, message(), userInfo: userInfo, file, line, method)
     }
     
     @inlinable
-    func fault(_ message: @autoclosure () -> Any, userInfo : [String: Any] = [:], file: String = #fileID, _ line: Int = #line, _ method: String = #function) {
+    public func fault(_ message: @autoclosure () -> Any, userInfo : [String: Any] = [:], file: String = #fileID, _ line: Int = #line, _ method: String = #function) {
         record(.error, message(), userInfo: userInfo, file, line, method)
     }
 }

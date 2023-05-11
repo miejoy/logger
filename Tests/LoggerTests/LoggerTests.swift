@@ -27,7 +27,7 @@ final class LoggerTests: XCTestCase {
         Logger.shared.logLevel = .trace
         let fakeRecorder = FakeRecoder()
         Logger.shared.recorder = fakeRecorder
-        Logger.shared.logSegments = [.logContent(.convert(\.messages, with: .defaultMessagesConverter()))]
+        Logger.shared.logSegments = [.content(.convert(\.messages, with: .defaultMessagesConverter()))]
         Logger.shared.throwFault = false
         
         let logStr = "test"
@@ -75,7 +75,7 @@ final class LoggerTests: XCTestCase {
         clearAll()
         var test = Test()
         Logger.shared.logLevel = .trace
-        Logger.shared.logSegments = [.logContent(.convert(\.messages, with: .defaultMessagesConverter()))]
+        Logger.shared.logSegments = [.content(.convert(\.messages, with: .defaultMessagesConverter()))]
         let fakeRecorder = FakeRecoder()
         Logger.shared.recorder = fakeRecorder
         
@@ -100,7 +100,7 @@ final class LoggerTests: XCTestCase {
         clearAll()
         var test = Test()
         Logger.shared.logLevel = .debug
-        Logger.shared.logSegments = [.logContent(.convert(\.messages, with: .defaultMessagesConverter()))]
+        Logger.shared.logSegments = [.content(.convert(\.messages, with: .defaultMessagesConverter()))]
         let fakeRecorder = FakeRecoder()
         Logger.shared.recorder = fakeRecorder
         
@@ -123,7 +123,7 @@ final class LoggerTests: XCTestCase {
         clearAll()
         var test = Test()
         Logger.shared.logLevel = .info
-        Logger.shared.logSegments = [.logContent(.convert(\.messages, with: .defaultMessagesConverter()))]
+        Logger.shared.logSegments = [.content(.convert(\.messages, with: .defaultMessagesConverter()))]
         let fakeRecorder = FakeRecoder()
         Logger.shared.recorder = fakeRecorder
         
@@ -148,7 +148,7 @@ final class LoggerTests: XCTestCase {
         clearAll()
         var test = Test()
         Logger.shared.logLevel = .notice
-        Logger.shared.logSegments = [.logContent(.convert(\.messages, with: .defaultMessagesConverter()))]
+        Logger.shared.logSegments = [.content(.convert(\.messages, with: .defaultMessagesConverter()))]
         let fakeRecorder = FakeRecoder()
         Logger.shared.recorder = fakeRecorder
         
@@ -174,13 +174,13 @@ final class LoggerTests: XCTestCase {
         let fakeRecorder = FakeRecoder()
         Logger.shared.recorder = fakeRecorder
         Logger.shared.logSegments = [
-            .logContent(.convert(\.file, with: .defaultFileConverter(fixLength: 0))),
+            .content(.convert(\.file, with: .defaultFileConverter(fixLength: 0))),
             .string("("),
-            .logContent(.convert(\.line, with: .defaultLineConverter(minLength: 0))),
+            .content(.convert(\.line, with: .defaultLineConverter(minLength: 0))),
             .string(")"),
-            .logContent(.convert(\.method, with: .defaultMethodConverter())),
+            .content(.convert(\.method, with: .defaultMethodConverter())),
             .string(": "),
-            .logContent(.convert(\.messages, with: .defaultMessagesConverter("\n")))
+            .content(.convert(\.messages, with: .defaultMessagesConverter("\n")))
         ]
         
         let logString1 = "test1"
@@ -206,10 +206,10 @@ final class LoggerTests: XCTestCase {
         Logger.shared.labels = [sharedLabel]
         Logger.shared.recorder = fakeRecorder
         Logger.shared.logSegments = [
-            .logContent(.defaultFileAndLineConverter()),
+            .content(.defaultFileAndLineConverter()),
             .string(": "),
-            .logContent(.convert(\.labels, with: .defaultLabelsConverter())),
-            .logContent(.convert(\.messages, with: .defaultMessagesConverter("\n")))
+            .content(.convert(\.labels, with: .defaultLabelsConverter())),
+            .content(.convert(\.messages, with: .defaultMessagesConverter("\n")))
         ]
         
         let logString1 = "test1"
@@ -265,7 +265,7 @@ final class LoggerTests: XCTestCase {
     
     func testLoggerIndependent() {
         let fakeRecorder = FakeRecoder()
-        let logger = Logger(label: "label", logLevel: .trace, logSegments: [.logContent(.convert(\.messages, with: .defaultMessagesConverter()))], recorder: fakeRecorder, throwFault: false)
+        let logger = Logger(label: "label", logLevel: .trace, logSegments: [.content(.convert(\.messages, with: .defaultMessagesConverter()))], recorder: fakeRecorder, throwFault: false)
         
         let logStr = "test"
         
@@ -334,7 +334,7 @@ final class LoggerTests: XCTestCase {
         let fakeRecorder2 = FakeRecoder()
         logger.recorder = CombineRecorder(fakeRecorder1, ConsoleRecorder(), fakeRecorder2)
         logger.logSegments = [
-            .logContent(.convert(\.messages, with: .defaultMessagesConverter(" ")))
+            .content(.convert(\.messages, with: .defaultMessagesConverter(" ")))
         ]
         
         XCTAssertEqual(fakeRecorder1.logList.count, 0)
@@ -390,14 +390,14 @@ extension Logger {
         case .error:    levelStr = "‼️ Error  "
         case .fault:    levelStr = "🚫 Fault  "
         }
-        let logContent: LogContent = .init(level: level, labels: labels, messages: messages, userInfo: userInfo, file: file, line: line, method: method)
+        let logContent: LogContent = .init(date: Date(), level: level, labels: labels, messages: messages, userInfo: userInfo, file: file, line: line, method: method)
         let logStr = s_defaultDateFormat.string(from: Date()) + " [\(levelStr)] " + file.suffix(from: file.lastIndex(of: "/") ?? file.startIndex) + "(\(line)).\(method)" +  " ↔️ " + messages.map( { "\($0)" }).joined(separator: " ")
         recorder.write(log: logStr, of: logContent)
     }
 }
 
-extension DataToStringConverter {
-    public static func defaultFileAndLineConverter(fixLength: Int = 35) -> DataToStringConverter<LogContent> {
+extension LogStringConverter {
+    public static func defaultFileAndLineConverter(fixLength: Int = 35) -> LogStringConverter<LogContent> {
         .init { logContent in
             let line = "(\(logContent.line))"
             if let index = logContent.file.lastIndex(of: "/") {

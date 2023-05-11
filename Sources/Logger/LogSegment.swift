@@ -12,20 +12,18 @@ public enum LogSegment {
     /// 普通字符串片段
     case string(String)
     /// 可通过 日志内容 转字符串的片段
-    case logContent(DataToStringConverter<LogContent>)
-    /// 日志记录时间片段
-    case dateTime(DateFormatter)
+    case content(LogStringConverter<LogContent>)
 }
 
 extension Array where Element == LogSegment {
     public static let defaultSegments: [LogSegment] = [
-        .dateTime(s_defaultDateFormat),
+        .content(.convert(\.date, with: .defaultDateConverter())),
         .string(" ["),
-        .logContent(.convert(\.level, with: .defaultLevelConverter())),
+        .content(.convert(\.level, with: .defaultLevelConverter())),
         .string("] "),
-        .logContent(.defaultLocationConverter()),
+        .content(.defaultLocationConverter()),
         .string(" ↔️ "),
-        .logContent(.convert(\.labels, with: .defaultLabelsConverter())),
-        .logContent(.convert(\.messages, with: .defaultMessagesConverter()))
+        .content(.convert(\.labels, with: .defaultLabelsConverter())),
+        .content(.convert(\.messages, with: .defaultMessagesConverter()))
     ]
 }

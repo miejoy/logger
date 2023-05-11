@@ -23,7 +23,7 @@ Logger 是一个简单的日志输出工具，内部提供可自定义的日志�
 - 日志处理
   - 日志处理采用分片单独处理后再拼接的方式，可以高度自定义
   - LogSegment 即为日志的一个片段
-  - DataToStringConverter 提供方便日志分片处理功能
+  - LogStringConverter 提供方便日志分片处理功能
 - 日志输出
   - LogRecorder 协议定义的日志输出的记录者，
   - 这里提供的默认输出是 ConsoleRecorder(控制台记录器)
@@ -42,8 +42,7 @@ Logger 是一个简单的日志输出工具，内部提供可自定义的日志�
 ### 日志片段有如下几个定义：
 
 - string: 普通字符串片段
-- logContent: 可通过 日志内容 转字符串的片段
-- dateTime: 日志记录时间片段
+- content: 可通过 日志内容 转字符串的片段
 
 ## 安装
 
@@ -72,7 +71,7 @@ import Logger
 // 设置日志等级
 Logger.shared.logLevel = .info
 // 设置日志片段列表
-Logger.shared.logSegments = [.logContent(.convert(\.messages, with: .defaultMessagesConverter()))]
+Logger.shared.logSegments = [.content(.convert(\.messages, with: .defaultMessagesConverter()))]
 // 设置日志输出记录器
 Logger.shared.recorder = LogFileRecorder()
 ```
@@ -120,13 +119,13 @@ import Logger
 Logger.shared.logSegments = [
     .dateTime(s_defaultDateFormat),                                             // 时间片段，如：2022-10-09 22:55:44.220+0800
     .string("|"),                                                               // 字符串片段，输出：|
-    .logContent(.convert(\.file, with: .defaultFileConverter(fixLength: 0))),   // 调用日志文件片段，如：LoggerTests.swift
+    .content(.convert(\.file, with: .defaultFileConverter(fixLength: 0))),   // 调用日志文件片段，如：LoggerTests.swift
     .string("("),                                                               // 字符串片段，输出：(
-    .logContent(.convert(\.line, with: .defaultLineConverter(minLength: 0))),   // 调用日志文件对应行数片段，如：224
+    .content(.convert(\.line, with: .defaultLineConverter(minLength: 0))),   // 调用日志文件对应行数片段，如：224
     .string(")"),                                                               // 字符串片段，输出：)
-    .logContent(.convert(\.method, with: .defaultMethodConverter())),           // 调用日志文件对应方法片段，如：testLogSegment()
+    .content(.convert(\.method, with: .defaultMethodConverter())),           // 调用日志文件对应方法片段，如：testLogSegment()
     .string(": "),                                                              // 字符串片段，输出：': '
-    .logContent(.convert(\.messages, with: .defaultMessagesConverter("\n")))
+    .content(.convert(\.messages, with: .defaultMessagesConverter("\n")))
 ]
 
 LogInfo("test")

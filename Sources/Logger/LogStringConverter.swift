@@ -1,5 +1,5 @@
 //
-//  DataToStringConverter.swift
+//  LogStringConverter.swift
 //  
 //
 //  Created by 黄磊 on 2022/10/7.
@@ -8,7 +8,7 @@
 import Foundation
 
 /// 其他数据转字符串转化器
-public struct DataToStringConverter<Data> {
+public struct LogStringConverter<Data> {
     let convert: (Data) -> String
     
     public func callAsFunction(_ data: Data) -> String {
@@ -20,7 +20,7 @@ public struct DataToStringConverter<Data> {
     }
     
     /// 用当前转化器连接另外一个字符串转换器。可参考 leftPadding 方法
-    public func connect(to otherConverter: DataToStringConverter<String>) -> DataToStringConverter<Data> {
+    public func connect(to otherConverter: LogStringConverter<String>) -> LogStringConverter<Data> {
         .init { data in
             otherConverter(self.convert(data))
         }
@@ -28,26 +28,36 @@ public struct DataToStringConverter<Data> {
 }
 
 // MARK: - LoggerInfo Key
-extension DataToStringConverter {
+extension LogStringConverter {
     
     /// 构造将 LogContent 属性转字符串的转化器
     ///
     /// - Parameter keyPath: 需要转换的 LogContent 中的属性对应的 KeyPath
     /// - Parameter converter: 可以将对应属性转化为字符串的转化器
-    /// - Returns DataToStringConverter<LogContent>: 返回构造好的转化器
+    /// - Returns LogStringConverter<LogContent>: 返回构造好的转化器
     public static func convert<Key>(
         _ keyPath: KeyPath<LogContent, Key>,
-        with converter: DataToStringConverter<Key>
-    ) -> DataToStringConverter<LogContent> {
+        with converter: LogStringConverter<Key>
+    ) -> LogStringConverter<LogContent> {
         .init { loggerInfo in
             converter.convert(loggerInfo[keyPath: keyPath])
         }
     }
     
+    // MARK: -Data
+    
+    /// 默认日志时间转化器。传入 nil 的话，使用默认格式 "yyyy-MM-dd HH:mm:ss.SSSZ"
+    public static func defaultDateConverter(_ dateFormatter: DateFormatter? = nil) -> LogStringConverter<Date> {
+        .init { date in
+            (dateFormatter ?? s_defaultDateFormat).string(from: date)
+        }
+    }
+    
+    
     // MARK: -LogLevel
     
     /// 默认日志等级转化器
-    public static func defaultLevelConverter() -> DataToStringConverter<LogLevel> {
+    public static func defaultLevelConverter() -> LogStringConverter<LogLevel> {
         .init { level in
             switch level {
             case .trace:    return "🐾 Trace  "
@@ -64,7 +74,7 @@ extension DataToStringConverter {
     // MARK: -labels
     
     /// 默认日志消息转化器
-    public static func defaultLabelsConverter() -> DataToStringConverter<[String]> {
+    public static func defaultLabelsConverter() -> LogStringConverter<[String]> {
         .init { labels in
             if labels.isEmpty {
                 return ""
@@ -76,7 +86,7 @@ extension DataToStringConverter {
     // MARK: -messages
     
     /// 默认日志消息转化器
-    public static func defaultMessagesConverter(_ separator: String = " ") -> DataToStringConverter<[Any]> {
+    public static func defaultMessagesConverter(_ separator: String = " ") -> LogStringConverter<[Any]> {
         .init { messages in
             messages.map {"\($0)"}.joined(separator: separator)
         }
@@ -85,7 +95,7 @@ extension DataToStringConverter {
     // MARK: -location
     
     /// 默认调用日志位置转化器，包含 文件名、行数、方法名称
-    public static func defaultLocationConverter() -> DataToStringConverter<LogContent> {
+    public static func defaultLocationConverter() -> LogStringConverter<LogContent> {
         .init { logContent in
             let lineAndMethodStr = "(\(logContent.line)).\(logContent.method)"
             if let index = logContent.file.lastIndex(of: "/") {
@@ -98,7 +108,7 @@ extension DataToStringConverter {
     // MARK: -file
     
     /// 默认调用日志文件转化器
-    public static func defaultFileConverter(fixLength: Int = 30) -> DataToStringConverter<String> {
+    public static func defaultFileConverter(fixLength: Int = 30) -> LogStringConverter<String> {
         .init { file in
             URL(fileURLWithPath: file).lastPathComponent
         }
@@ -108,7 +118,7 @@ extension DataToStringConverter {
     // MARK: -line
     
     /// 默认调用日志文件对应的行数转化器
-    public static func defaultLineConverter(minLength: Int = 4) -> DataToStringConverter<Int> {
+    public static func defaultLineConverter(minLength: Int = 4) -> LogStringConverter<Int> {
         .init { line in
             "\(line)"
         }
@@ -118,7 +128,7 @@ extension DataToStringConverter {
     // MARK: -method
     
     /// 默认调用日志对应方法转化器
-    public static func defaultMethodConverter() -> DataToStringConverter<String> {
+    public static func defaultMethodConverter() -> LogStringConverter<String> {
         .init { method in
             ".\(method)"
         }
@@ -128,7 +138,7 @@ extension DataToStringConverter {
 
 // MARK: - String Utils
 
-extension DataToStringConverter {
+extension LogStringConverter {
     
     /// 头部填充字符
     ///
