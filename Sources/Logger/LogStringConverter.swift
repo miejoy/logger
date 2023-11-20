@@ -44,7 +44,7 @@ extension LogStringConverter {
         }
     }
     
-    // MARK: -Data
+    // MARK: -Date
     
     /// 默认日志时间转化器。传入 nil 的话，使用默认格式 "yyyy-MM-dd HH:mm:ss.SSSZ"
     public static func defaultDateConverter(_ dateFormatter: DateFormatter? = nil) -> LogStringConverter<Date> {
@@ -171,6 +171,16 @@ extension LogStringConverter {
                 return data
             }
             return data + String(repeating: character, count: length - data.count)
+        }))
+    }
+    
+    public func maxLength(to length: UInt) -> Self {
+        self.connect(to: .init(convert: { data in
+            if data.count <= length || data.count <= 3 {
+                return data
+            }
+            let endIndex = data.index(data.startIndex, offsetBy: Int(length) - 3)
+            return data[..<endIndex] + "..."
         }))
     }
 }

@@ -347,6 +347,19 @@ final class LoggerTests: XCTestCase {
         XCTAssertEqual(fakeRecorder1.logList[0], "\(logString1)")
         XCTAssertEqual(fakeRecorder2.logList[0], "\(logString1)")
     }
+    
+    func testMaxLengthConvert() {
+        let fakeRecorder = FakeRecoder()
+        let logSegments: [LogSegment] = [.content(.defaultLocationConverter().maxLength(to: 15))]
+        let logger = Logger(logLevel: .trace, logSegments: logSegments, recorder: fakeRecorder, throwFault: false)
+        
+        XCTAssertEqual(fakeRecorder.logList.count, 0)
+        
+        let logString1 = "test1"
+        logger.trace(logString1)
+        XCTAssertEqual(fakeRecorder.logList.count, 1)
+        XCTAssertEqual(fakeRecorder.logList[0], "LoggerTests....")
+    }
 }
 
 

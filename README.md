@@ -117,13 +117,13 @@ subLogger.info(logStr)
 import Logger
 
 Logger.shared.logSegments = [
-    .dateTime(s_defaultDateFormat),                                             // 时间片段，如：2022-10-09 22:55:44.220+0800
+    .content(.convert(\.date, with: .defaultDateConverter())),                  // 时间片段，如：2022-10-09 22:55:44.220+0800
     .string("|"),                                                               // 字符串片段，输出：|
-    .content(.convert(\.file, with: .defaultFileConverter(fixLength: 0))),   // 调用日志文件片段，如：LoggerTests.swift
+    .content(.convert(\.file, with: .defaultFileConverter(fixLength: 0))),      // 调用日志文件片段，如：LoggerTests.swift
     .string("("),                                                               // 字符串片段，输出：(
-    .content(.convert(\.line, with: .defaultLineConverter(minLength: 0))),   // 调用日志文件对应行数片段，如：224
+    .content(.convert(\.line, with: .defaultLineConverter(minLength: 0))),      // 调用日志文件对应行数片段，如：224
     .string(")"),                                                               // 字符串片段，输出：)
-    .content(.convert(\.method, with: .defaultMethodConverter())),           // 调用日志文件对应方法片段，如：testLogSegment()
+    .content(.convert(\.method, with: .defaultMethodConverter())),              // 调用日志文件对应方法片段，如：testLogSegment()
     .string(": "),                                                              // 字符串片段，输出：': '
     .content(.convert(\.messages, with: .defaultMessagesConverter("\n")))
 ]
