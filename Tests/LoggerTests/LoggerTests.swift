@@ -13,7 +13,7 @@ final class LoggerTests: XCTestCase {
     func clearAll() {
         Logger.shared.logLevel = .debug
         Logger.shared.logSegments = .defaultSegments
-        Logger.shared.recorder = ConsoleRecorder()
+        Logger.shared.recorder = OSRecorder()
         Logger.shared.throwFault = true
     }
     
@@ -25,7 +25,7 @@ final class LoggerTests: XCTestCase {
     func testLoggerUtils() {
         clearAll()
         Logger.shared.logLevel = .trace
-        let fakeRecorder = FakeRecoder()
+        let fakeRecorder = FakeRecorder()
         Logger.shared.recorder = fakeRecorder
         Logger.shared.logSegments = [.content(.convert(\.messages, with: .defaultMessagesConverter()))]
         Logger.shared.throwFault = false
@@ -76,7 +76,7 @@ final class LoggerTests: XCTestCase {
         var test = Test()
         Logger.shared.logLevel = .trace
         Logger.shared.logSegments = [.content(.convert(\.messages, with: .defaultMessagesConverter()))]
-        let fakeRecorder = FakeRecoder()
+        let fakeRecorder = FakeRecorder()
         Logger.shared.recorder = fakeRecorder
         
         XCTAssertEqual(fakeRecorder.logList.count, 0)
@@ -101,7 +101,7 @@ final class LoggerTests: XCTestCase {
         var test = Test()
         Logger.shared.logLevel = .debug
         Logger.shared.logSegments = [.content(.convert(\.messages, with: .defaultMessagesConverter()))]
-        let fakeRecorder = FakeRecoder()
+        let fakeRecorder = FakeRecorder()
         Logger.shared.recorder = fakeRecorder
         
         XCTAssertEqual(fakeRecorder.logList.count, 0)
@@ -124,7 +124,7 @@ final class LoggerTests: XCTestCase {
         var test = Test()
         Logger.shared.logLevel = .info
         Logger.shared.logSegments = [.content(.convert(\.messages, with: .defaultMessagesConverter()))]
-        let fakeRecorder = FakeRecoder()
+        let fakeRecorder = FakeRecorder()
         Logger.shared.recorder = fakeRecorder
         
         XCTAssertEqual(fakeRecorder.logList.count, 0)
@@ -149,7 +149,7 @@ final class LoggerTests: XCTestCase {
         var test = Test()
         Logger.shared.logLevel = .notice
         Logger.shared.logSegments = [.content(.convert(\.messages, with: .defaultMessagesConverter()))]
-        let fakeRecorder = FakeRecoder()
+        let fakeRecorder = FakeRecorder()
         Logger.shared.recorder = fakeRecorder
         
         XCTAssertEqual(fakeRecorder.logList.count, 0)
@@ -171,7 +171,7 @@ final class LoggerTests: XCTestCase {
     
     func testLogSegment() {
         clearAll()
-        let fakeRecorder = FakeRecoder()
+        let fakeRecorder = FakeRecorder()
         Logger.shared.recorder = fakeRecorder
         Logger.shared.logSegments = [
             .content(.convert(\.file, with: .defaultFileConverter(fixLength: 0))),
@@ -201,7 +201,7 @@ final class LoggerTests: XCTestCase {
     
     func testCustomLogSegment() {
         clearAll()
-        let fakeRecorder = FakeRecoder()
+        let fakeRecorder = FakeRecorder()
         let sharedLabel = "Shared"
         Logger.shared.labels = [sharedLabel]
         Logger.shared.recorder = fakeRecorder
@@ -264,7 +264,7 @@ final class LoggerTests: XCTestCase {
     }
     
     func testLoggerIndependent() {
-        let fakeRecorder = FakeRecoder()
+        let fakeRecorder = FakeRecorder()
         let logger = Logger(label: "label", logLevel: .trace, logSegments: [.content(.convert(\.messages, with: .defaultMessagesConverter()))], recorder: fakeRecorder, throwFault: false)
         
         let logStr = "test"
@@ -309,7 +309,7 @@ final class LoggerTests: XCTestCase {
     }
     
     func testDeriveLogger() {
-        let fakeRecorder = FakeRecoder()
+        let fakeRecorder = FakeRecorder()
         let logSegments = [LogSegment]([LogSegment].defaultSegments.dropFirst())
         let firstLabel = "First"
         let logger = Logger(label: firstLabel, logLevel: .trace, logSegments: logSegments, recorder: fakeRecorder, throwFault: false)
@@ -330,9 +330,9 @@ final class LoggerTests: XCTestCase {
         clearAll()
         let logger = Logger.shared
         logger.logLevel = .trace
-        let fakeRecorder1 = FakeRecoder()
-        let fakeRecorder2 = FakeRecoder()
-        logger.recorder = CombineRecorder(fakeRecorder1, ConsoleRecorder(), fakeRecorder2)
+        let fakeRecorder1 = FakeRecorder()
+        let fakeRecorder2 = FakeRecorder()
+        logger.recorder = CombineRecorder(fakeRecorder1, OSRecorder(), fakeRecorder2)
         logger.logSegments = [
             .content(.convert(\.messages, with: .defaultMessagesConverter(" ")))
         ]
@@ -349,7 +349,7 @@ final class LoggerTests: XCTestCase {
     }
     
     func testMaxLengthConvert() {
-        let fakeRecorder = FakeRecoder()
+        let fakeRecorder = FakeRecorder()
         let logSegments: [LogSegment] = [.content(.defaultLocationConverter().maxLength(to: 15))]
         let logger = Logger(logLevel: .trace, logSegments: logSegments, recorder: fakeRecorder, throwFault: false)
         
@@ -377,7 +377,7 @@ struct Test {
     }
 }
 
-class FakeRecoder: LogRecorder {
+class FakeRecorder: LogRecorder {
     var logList: [String] = []
     func write(log: String, of logContent: LogContent) {
         logList.append(log)
@@ -403,7 +403,7 @@ extension Logger {
         case .error:    levelStr = "‼️ Error  "
         case .fault:    levelStr = "🚫 Fault  "
         }
-        let logContent: LogContent = .init(date: Date(), level: level, labels: labels, messages: messages, userInfo: userInfo, file: file, line: line, method: method)
+        let logContent: LogContent = .init(date: Date(), level: level, labels: labels, messages: messages.map { "\($0)" }, userInfo: userInfo, file: file, line: line, method: method)
         let logStr = s_defaultDateFormat.string(from: Date()) + " [\(levelStr)] " + file.suffix(from: file.lastIndex(of: "/") ?? file.startIndex) + "(\(line)).\(method)" +  " ↔️ " + messages.map( { "\($0)" }).joined(separator: " ")
         recorder.write(log: logStr, of: logContent)
     }

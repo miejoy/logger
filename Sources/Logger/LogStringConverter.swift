@@ -8,14 +8,14 @@
 import Foundation
 
 /// 其他数据转字符串转化器
-public struct LogStringConverter<Data> {
-    let convert: (Data) -> String
+public struct LogStringConverter<Data>: Sendable {
+    let convert: @Sendable (Data) -> String
     
     public func callAsFunction(_ data: Data) -> String {
         convert(data)
     }
     
-    public init(convert: @escaping (Data) -> String) {
+    public init(convert: @Sendable @escaping (Data) -> String) {
         self.convert = convert
     }
     
@@ -86,9 +86,9 @@ extension LogStringConverter {
     // MARK: -messages
     
     /// 默认日志消息转化器
-    public static func defaultMessagesConverter(_ separator: String = " ") -> LogStringConverter<[Any]> {
+    public static func defaultMessagesConverter(_ separator: String = " ") -> LogStringConverter<[String]> {
         .init { messages in
-            messages.map {"\($0)"}.joined(separator: separator)
+            messages.joined(separator: separator)
         }
     }
     
@@ -183,6 +183,9 @@ extension LogStringConverter {
             return data[..<endIndex] + "..."
         }))
     }
+}
+
+extension KeyPath: @retroactive @unchecked Sendable where Root == LogContent {
 }
 
 /// 默认日志日期格式

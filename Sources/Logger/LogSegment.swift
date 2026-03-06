@@ -8,7 +8,7 @@
 import Foundation
 
 /// 日志片段
-public enum LogSegment {
+public enum LogSegment: Sendable {
     /// 普通字符串片段
     case string(String)
     /// 可通过 日志内容 转字符串的片段
